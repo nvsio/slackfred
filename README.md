@@ -17,7 +17,19 @@ Alfred workflow to interact, and perform various functions with the service [Sla
 * `slf`: Search files
   * Open alfred and type `slf` to search files. Selecting a file opens it in your browser
 * `slk`: Search users and rooms
-  * Open alfred and type `slk` to search user and room names. Hitting enter triggers an Applescript to interact with the **desktop** application and passes the selected name. Similar to cmd+k
+  * Open alfred and type `slk` to search user and room names. Hitting enter triggers an Applescript to interact with the **desktop** application and passes the selected name. Similar to cmd+k.
+  * **Note**: If you're using Slack in fullscreen mode you will need to a delay to the Applescript. Open Alfred preferences, go to the Slackfred workflow and double click the `slk` input. Add in a delay (you may need to tweak based on your monitor/system) similar to this example:
+  ```
+on alfred_script(q)
+tell application "Slack" to activate
+tell application "System Events"
+	delay .6
+	keystroke "k" using {command down}
+	tell process "Slack" to keystroke (q as string)
+	key code 36
+end tell
+end alfred_script
+```
 * `slp`: Set your presence
   * Open alfred and type `slp active` or `slp away`
 * `slc`: View, leave and join channels
