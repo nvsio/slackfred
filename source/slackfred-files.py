@@ -42,7 +42,7 @@ def main(wf):
         filesList = wf.filter(query, filesList, key = searchSlackFiles)
 
     for files in filesList:
-        if files['comments_count'] > 0:
+        if 'initial_comment' in files:
             wf.add_item(title = files['name'],
                 subtitle = files['initial_comment']['comment'],
                 arg = files['url'],
