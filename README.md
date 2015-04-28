@@ -33,7 +33,7 @@ end alfred_script
 * `slp`: Set your presence
   * Open alfred and type `slp active` or `slp away`
 * `slc`: View, leave and join channels
-  * Open alfred and type `slc` to display a searchable list of channels. Selecting a channel with `alt` leaves and `ctrl` lets you join.
+  * Open alfred and type `slc` to display a searchable list of channels. Selecting a channel with `ctrl` leaves and `alt` lets you join.
 * `slclear`: Clear unread messages
 
 ## To-do
