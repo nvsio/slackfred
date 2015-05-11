@@ -5,7 +5,6 @@ from workflow import Workflow, ICON_WEB, web, PasswordNotFound
 def main(wf):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--setkey', dest='apikey', nargs='?', default = None)
     parser.add_argument('query', nargs='?', default = None)
     args = parser.parse_args(wf.args)
 
