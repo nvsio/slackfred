@@ -4,12 +4,11 @@ from workflow import Workflow, web, PasswordNotFound
 
 
 def slack_keys():
-    wf_password = Workflow()
+    wf = Workflow()
     try:
-        slack_keys = wf_password.get_password('slack_api_key')
+        slack_keys = wf.get_password('slack_api_key')
     except PasswordNotFound:
-        wf.add_item('No API key set.'
-                    'Please run slt',
+        wf.add_item(title='No API key set. Please run slt',
                     valid=False)
         wf.send_feedback()
         return 0
@@ -19,21 +18,28 @@ def slack_keys():
 
 
 def slack_list(keys):
+    wf = Workflow()
     slack_search = []
 
     for key in keys:
         api_key = str(key)
-        slack_channels = web.get('https://slack.com/api/channels.list?token=' + api_key + '&exclude_archived=1&pretty=1').json()
-        slack_users = web.get('https://slack.com/api/users.list?token=' + api_key + '&pretty=1').json()
-        slack_groups = web.get('https://slack.com/api/groups.list?token=' + api_key + '&pretty=1').json()
-
-        for channels in slack_channels['channels']:
-            slack_search.append({'name': channels['name']})
-        for users in slack_users['members']:
-            slack_search.append({'users': users['name']})
-        for groups in slack_groups['groups']:
-            if 'name' in groups:
-                slack_search.append({'groups': groups['name']})
+        slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
+        if 'false' in slack_auth:
+            wf.add_item(title='Authentication failed. Check your API key',
+                        valid=False)
+            wf.send_feedback()
+        else:
+            slack_channels = web.get('https://slack.com/api/channels.list?token=' + api_key +
+                                     '&exclude_archived=1&pretty=1').json()
+            slack_users = web.get('https://slack.com/api/users.list?token=' + api_key + '&pretty=1').json()
+            slack_groups = web.get('https://slack.com/api/groups.list?token=' + api_key + '&pretty=1').json()
+            for channels in slack_channels['channels']:
+                slack_search.append({'name': channels['name']})
+            for users in slack_users['members']:
+                slack_search.append({'users': users['name']})
+            for groups in slack_groups['groups']:
+                if 'name' in groups:
+                    slack_search.append({'groups': groups['name']})
 
     return slack_search
 

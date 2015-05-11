@@ -8,8 +8,7 @@ def slack_keys():
     try:
         slack_keys = wf_password.get_password('slack_api_key')
     except PasswordNotFound:
-        wf.add_item('No API key set.'
-                    'Please run slt',
+        wf.add_item(title='No API key set. Please run slt',
                     valid=False)
         wf.send_feedback()
         return 0
@@ -22,9 +21,16 @@ def slack_channels(keys):
     channels_list = []
     for key in keys:
         api_key = str(key)
-        channels = web.get('https://slack.com/api/channels.list?token=' + api_key + '&count=50&pretty=1').json()
-        for channel in channels['channels']:
-            channels_list.append({'name': channel['name'], 'member': channel['is_member'], 'id': channel['id']})
+        slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
+        if 'false' in slack_auth:
+            wf.add_item(title='Authentication failed. Check your API key',
+                        valid=False)
+            wf.send_feedback()
+        else:
+            channels = web.get('https://slack.com/api/channels.list?token=' + api_key + '&count=50&pretty=1').json()
+            for channel in channels['channels']:
+                channels_list.append({'team': slack_auth['team'],'name': channel['name'], 'member': channel['is_member']
+                    , 'id': channel['id']})
 
     return channels_list
 
@@ -67,7 +73,7 @@ def main(wf):
     def wrapper():
         return slack_channels(keys=slack_keys())
 
-    channels_list = wf.cached_data('channels', wrapper, max_age=10)
+    channels_list = wf.cached_data('channels', wrapper, max_age=60)
 
     query = args.query
 
@@ -76,12 +82,12 @@ def main(wf):
 
     for channels in channels_list:
         if channels['member'] == True:
-            wf.add_item(title=channels['name'],
+            wf.add_item(title=channels['name']+' - '+channels['team'],
                 subtitle='Member',
                 arg=channels['name'],
                 valid=True)
         elif channels['member'] == False:
-            wf.add_item(title=channels['name'],
+            wf.add_item(title=channels['name']+' - '+channels['team'],
                 subtitle='Not a member',
                 arg=channels['name'],
                 valid=True)

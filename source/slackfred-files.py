@@ -8,8 +8,7 @@ def slack_keys():
     try:
         slack_keys = wf_password.get_password('slack_api_key')
     except PasswordNotFound:
-        wf.add_item('No API key set.'
-                    'Please run slt',
+        wf.add_item(title='No API key set. Please run slt',
                     valid=False)
         wf.send_feedback()
         return 0
