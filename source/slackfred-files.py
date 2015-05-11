@@ -23,8 +23,8 @@ def slack_files(keys):
 
     for key in keys:
         api_key = str(key)
-        auth_test = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
-        if auth_test['ok'] is False:
+        slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
+        if slack_auth['ok'] is False:
             wf.add_item('Authentication failed.'
                         'Try saving your API key again',
                         valid=False)

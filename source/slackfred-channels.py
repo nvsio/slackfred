@@ -22,10 +22,11 @@ def slack_channels(keys):
     for key in keys:
         api_key = str(key)
         slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
-        if 'false' in slack_auth:
+        if slack_auth['ok'] is False:
             wf.add_item(title='Authentication failed. Check your API key',
                         valid=False)
             wf.send_feedback()
+            break
         else:
             channels = web.get('https://slack.com/api/channels.list?token=' + api_key + '&count=50&pretty=1').json()
             for channel in channels['channels']:
