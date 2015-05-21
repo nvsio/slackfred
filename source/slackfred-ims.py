@@ -25,7 +25,7 @@ def my_slack_info(keys):
         api_key = str(key)
         slack_user_info = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
         if slack_user_info['ok'] is False:
-            wf.add_item(title='Authenticantion failed. Please check your API keys.',
+            wf.add_item(title='Authentication failed. Please check your API keys.',
                         valid=False)
             wf.send_feedback()
         else:
