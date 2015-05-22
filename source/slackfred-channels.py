@@ -4,9 +4,9 @@ from workflow import Workflow, web, PasswordNotFound
 
 
 def slack_keys():
-    wf_password = Workflow()
+    wf = Workflow()
     try:
-        slack_keys = wf_password.get_password('slack_api_key')
+        slack_keys = wf.get_password('slack_api_key')
     except PasswordNotFound:
         wf.add_item(title='No API key set. Please run slt',
                     valid=False)
