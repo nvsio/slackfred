@@ -35,19 +35,19 @@ def slack_list(keys):
             slack_users = web.get('https://slack.com/api/users.list?token=' + api_key + '&pretty=1').json()
             slack_groups = web.get('https://slack.com/api/groups.list?token=' + api_key + '&pretty=1').json()
             for channels in slack_channels['channels']:
-                slack_search.append({'name': channels['name']})
+                slack_search.append({'name': channels['name'], 'team': slack_auth['team']})
             for users in slack_users['members']:
-                slack_search.append({'users': users['name']})
+                slack_search.append({'name': users['name'], 'team': slack_auth['team']})
             for groups in slack_groups['groups']:
                 if 'name' in groups:
-                    slack_search.append({'groups': groups['name']})
+                    slack_search.append({'name': groups['name'], 'team': slack_auth['team']})
 
     return slack_search
 
 
 def search_slack_names(slack_list):
     elements = []
-    elements.append(slack_list)
+    elements.append(slack_list['name'])
     return u' '.join(elements)
 
 
@@ -72,15 +72,16 @@ def main(wf):
     def wrapper():
         return slack_list(keys=slack_keys())
 
-    slack_search = wf.cached_data('channels', wrapper, max_age=10)
+    slack_search = wf.cached_data('slackfred', wrapper, max_age=120)
 
     if query:
         slack_search = wf.filter(query, slack_search, key=search_slack_names)
 
     for names in slack_search:
-        wf.add_item(title=names,
-            arg=names,
-            valid=True)
+        wf.add_item(title=names['name'],
+                    subtitle=names['team'],
+                    arg=names['name'],
+                    valid=True)
 
     wf.send_feedback()
 

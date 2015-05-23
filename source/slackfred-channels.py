@@ -32,6 +32,12 @@ def slack_channels(keys):
             for channel in channels['channels']:
                 channels_list.append({'team': slack_auth['team'],'name': channel['name'], 'member': channel['is_member']
                     , 'id': channel['id']})
+            groups = web.get('https://slack.com/api/groups.list?token=' + api_key + '&exclude_archived=1&pretty=1')\
+                .json()
+            for group in groups['groups']:
+                if 'id' in group:
+                    channels_list.append({'team': slack_auth['team'], 'name': group['name'], 'member': True,
+                                          'id': group['id']})
 
     return channels_list
 
@@ -48,7 +54,14 @@ def leave_channel(keys, query):
         channels_list = web.get('https://slack.com/api/channels.list?token=' + api_key + '&pretty=1').json()
         for channels in channels_list['channels']:
             if query == channels['name']:
-                web.get('https://slack.com/api/channels.leave?token=' + api_key + '&channel=' + channels['id'] + '&pretty=1')
+                web.get('https://slack.com/api/channels.leave?token=' + api_key + '&channel=' + channels['id']
+                        + '&pretty=1')
+            else:
+                groups_list = web.get('https://slack.com/api/groups.list?token=' + api_key + '&pretty=1').json()
+                for group in groups_list['groups']:
+                    if query == group['name']:
+                        web.get('https://slack.com/api/groups.leave?token=' + api_key + '&channel=' + group['id']
+                        + '&pretty=1')
 
 def join_channel(keys, query):
     for key in keys:
@@ -74,7 +87,7 @@ def main(wf):
     def wrapper():
         return slack_channels(keys=slack_keys())
 
-    channels_list = wf.cached_data('channels', wrapper, max_age=60)
+    channels_list = wf.cached_data('channels', wrapper, max_age=120)
 
     query = args.query
 

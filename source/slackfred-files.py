@@ -47,8 +47,6 @@ def slack_files(keys):
 def search_slack_files(files):
     elements = []
     elements.append(files['name'])
-    elements.append(files['title'])
-    elements.append(files['filetype'])
     return u' '.join(elements)
 
 
