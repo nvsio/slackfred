@@ -3,7 +3,7 @@ slackfred
 
 ![](http://i.imgur.com/Vy78c78.gif)
 
-Alfred workflow to interact, and perform various functions with the service [Slack](http://slack.com/). Now with mult-team support!
+Alfred workflow to interact, and perform various functions with the service [Slack](http://slack.com/). Now with multi-team support!
 
 I'm currently in the process of getting this updated to work with multiple organizations where possible, as well as adding some extra workflow options like private groups, stars and a few more things. Stay tuned!
 
