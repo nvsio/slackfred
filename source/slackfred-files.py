@@ -1,56 +1,81 @@
 import sys
 import argparse
-from workflow import Workflow, ICON_WEB, web, PasswordNotFound
+from workflow import Workflow, web, PasswordNotFound
 
-def slackFiles(api_key):
 
-    files = web.get('https://slack.com/api/files.list?token=' + api_key + '&count=50&pretty=1').json()
-    filesList = files['files']
+def slack_keys():
+    wf_password = Workflow()
+    try:
+        slack_keys = wf_password.get_password('slack_api_key')
+    except PasswordNotFound:
+        wf.add_item(title='No API key set. Please run slt',
+                    valid=False)
+        wf.send_feedback()
+        return 0
+    keys = slack_keys.split(",")
 
-    return filesList
+    return keys
 
-def searchSlackFiles(files):
+
+def slack_files(keys):
+
+    files_list = []
+
+    for key in keys:
+        api_key = str(key)
+        slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
+        if slack_auth['ok'] is False:
+            wf.add_item('Authentication failed.'
+                        'Try saving your API key again',
+                        valid=False)
+            wf.send_feedback()
+            break
+        else:
+            files = web.get('https://slack.com/api/files.list?token=' + api_key + '&count=20&pretty=1').json()
+            for file in files['files']:
+                if 'initial_comment' in file:
+                    files_list.append({'name': file['name'], 'id': file['id'], 'url': file['url'], 'title':
+                        file['title'], 'filetype': file['filetype'], 'initial_comment': file['initial_comment'],
+                                       'comment': file['initial_comment']['comment']})
+                else:
+                    files_list.append({'name': file['name'], 'id': file['id'], 'url': file['url'], 'title':
+                        file['title'], 'filetype': file['filetype']})
+
+    return files_list
+
+
+def search_slack_files(files):
     elements = []
     elements.append(files['name'])
-    elements.append(files['title'])
-    elements.append(files['filetype'])
     return u' '.join(elements)
+
 
 def main(wf):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('query', nargs = '?', default = None)
+    parser.add_argument('query', nargs='?', default=None)
     args = parser.parse_args(wf.args)
-
-    try:
-        api_key = wf.get_password('slack_api_key')
-    except PasswordNotFound:
-        wf.add_item('No API key set.'
-            'Please run slt',
-            valid = False)
-        wf.send_feedback()
-        return 0
 
     query = args.query
 
     def wrapper():
-        return slackFiles(api_key)
+        return slack_files(keys=slack_keys())
 
-    filesList = wf.cached_data('files', wrapper, max_age = 120)
+    files_to_list = wf.cached_data('files', wrapper, max_age=120)
 
     if query:
-        filesList = wf.filter(query, filesList, key = searchSlackFiles)
+        files_to_list = wf.filter(query, files_to_list, key=search_slack_files)
 
-    for files in filesList:
-        if 'initial_comment' in files:
-            wf.add_item(title = files['name'],
-                subtitle = files['initial_comment']['comment'],
-                arg = files['url'],
-                valid = True)
+    for files in files_to_list:
+        if 'initial_comment' in files_to_list:
+            wf.add_item(title=files['name'],
+                subtitle=files['comment'],
+                arg=files['url'],
+                valid=True)
         else:
-            wf.add_item(title = files['name'],
-                arg = files['url'],
-                valid = True)
+            wf.add_item(title=files['name'],
+                arg=files['url'],
+                valid=True)
 
     wf.send_feedback()
 

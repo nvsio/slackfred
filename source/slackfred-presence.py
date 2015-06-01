@@ -5,29 +5,32 @@ from workflow import Workflow, ICON_WEB, web, PasswordNotFound
 def main(wf):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--setkey', dest='apikey', nargs='?', default = None)
     parser.add_argument('query', nargs='?', default = None)
     args = parser.parse_args(wf.args)
 
-    if args.apikey:
-        wf.save_password('slack_api_key', args.apikey)
-        return 0
-
     try:
-        api_key = wf.get_password('slack_api_key')
+        slack_keys = wf.get_password('slack_api_key')
     except PasswordNotFound:
-        wf.add_item('No API key set.',
-            'Please run slt',
-            valid = False)
+        wf.add_item(title='No API key set. Please run slt',
+                    valid=False)
         wf.send_feedback()
         return 0
+    keys = slack_keys.split(",")
 
     if len(wf.args):
         query = wf.args[0]
     else:
         query = None
 
-    web.get('https://slack.com/api/presence.set?token=' + api_key + '&presence=' + query + '&pretty=1')
+    for key in keys:
+        api_key = str(key)
+        slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
+        if slack_auth['ok'] is False:
+            wf.add_item(title='Authentication failed. Check your API key',
+                        valid=False)
+            wf.send_feedback()
+        else:
+            web.get('https://slack.com/api/users.setPresence?token=' + api_key + '&presence=' + query + '&pretty=1')
 
     wf.send_feedback()
 
