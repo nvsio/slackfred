@@ -53,4 +53,4 @@ end alfred_script
 * Create a smoother API key/token process
 * Improve speed and performance
 
-This workflow was created with the help of [Dean Jackson's](https://github.com/deanishe/alfred-workflow) Alfred  library.
+This workflow was created in Python with the help of [Dean Jackson's](https://github.com/deanishe/alfred-workflow) Alfred  library and the [Requests](http://docs.python-requests.org/en/latest/) library.
