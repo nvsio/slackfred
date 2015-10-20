@@ -1,5 +1,6 @@
 import sys
 import argparse
+import requests
 from workflow import Workflow, web, PasswordNotFound
 
 
@@ -28,7 +29,7 @@ def search_slack(keys, query):
                         valid=False)
             wf.send_feedback()
         else:
-            results = web.get('https://slack.com/api/search.messages?token=' + api_key + '&query=' + query +
+            results = requests.get('https://slack.com/api/search.messages?token=' + api_key + '&query=' + query +
                               '&count=10&pretty=1').json()
             if results['messages']['total'] > 0:
                 for result in results['messages']['matches']:
