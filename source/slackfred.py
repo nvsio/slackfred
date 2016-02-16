@@ -1,7 +1,8 @@
 import sys
 import argparse
 from workflow import Workflow, web, PasswordNotFound
-
+import json
+import webbrowser
 
 def slack_keys():
     wf = Workflow()
@@ -35,13 +36,12 @@ def slack_list(keys):
             slack_users = web.get('https://slack.com/api/users.list?token=' + api_key + '&pretty=1').json()
             slack_groups = web.get('https://slack.com/api/groups.list?token=' + api_key + '&pretty=1').json()
             for channels in slack_channels['channels']:
-                slack_search.append({'name': channels['name'], 'team': slack_auth['team']})
+                slack_search.append({'name': channels['name'], 'team': slack_auth['team'],'team_id': slack_auth['team_id'], 'id': channels['id'], 'type': 'channel', 'api_key': api_key})
             for users in slack_users['members']:
-                slack_search.append({'name': users['name'], 'team': slack_auth['team']})
+                slack_search.append({'name': users['name'], 'team': slack_auth['team'],'team_id': slack_auth['team_id'], 'id': users['id'], 'type': 'user', 'api_key': api_key})
             for groups in slack_groups['groups']:
                 if 'name' in groups:
-                    slack_search.append({'name': groups['name'], 'team': slack_auth['team']})
-
+                    slack_search.append({'name': groups['name'], 'team': slack_auth['team'],'team_id': slack_auth['team_id'], 'id': groups['id'], 'type': 'group', 'api_key': api_key})
     return slack_search
 
 
@@ -50,11 +50,24 @@ def search_slack_names(slack_list):
     elements.append(slack_list['name'])
     return u' '.join(elements)
 
+def slack_urlopen(target_json):
+    slack_target = json.loads(target_json)
+    url = ""
+    if slack_target['type'] != 'user':
+        url = "slack://channel?id=" + slack_target['id'] + "&team=" + slack_target['team_id']
+    elif slack_target['type'] == 'user':
+        im_id = web.get('https://slack.com/api/im.open?token=' + slack_target['api_key'] +
+                                 '&user=' + slack_target['id']).json()['channel']['id']
+        url = "slack://channel?id=" + im_id + "&team=" + slack_target['team_id']
+
+    return url
+
 
 def main(wf):
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--setkey', dest='apikey', nargs='?', default=None)
+    parser.add_argument('--open', dest='open', nargs='?')
     parser.add_argument('query', nargs='?', default = None)
     args = parser.parse_args(wf.args)
 
@@ -63,6 +76,10 @@ def main(wf):
         wf.save_password('slack_api_key', args.apikey)
         return 0
 
+    if args.open:
+        url = slack_urlopen(wf.args[1])
+        webbrowser.open(url)
+        return
 
     if len(wf.args):
         query=wf.args[0]
@@ -80,7 +97,7 @@ def main(wf):
     for names in slack_search:
         wf.add_item(title=names['name'],
                     subtitle=names['team'],
-                    arg=names['name'],
+                    arg=json.dumps(names),
                     valid=True)
 
     wf.send_feedback()

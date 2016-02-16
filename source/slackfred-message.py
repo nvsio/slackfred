@@ -1,5 +1,6 @@
 import sys
 import argparse
+import subprocess
 from workflow import Workflow, web, PasswordNotFound
 
 
@@ -48,43 +49,28 @@ def search_slack_channels(channels):
     return u' '.join(elements)
 
 
-def leave_channel(keys, query):
-    for key in keys:
-        api_key = str(key)
-        channels_list = web.get('https://slack.com/api/channels.list?token=' + api_key + '&pretty=1').json()
-        for channels in channels_list['channels']:
-            if query == channels['name']:
-                web.get('https://slack.com/api/channels.leave?token=' + api_key + '&channel=' + channels['id']
-                        + '&pretty=1')
-            else:
-                groups_list = web.get('https://slack.com/api/groups.list?token=' + api_key + '&pretty=1').json()
-                for group in groups_list['groups']:
-                    if query == group['name']:
-                        web.get('https://slack.com/api/groups.leave?token=' + api_key + '&channel=' + group['id']
-                        + '&pretty=1')
-
-
-def join_channel(keys, query):
-    for key in keys:
-        api_key = str(key)
-        channels_list = web.get('https://slack.com/api/channels.list?token=' + api_key + '&pretty=1').json()
-        for channels in channels_list['channels']:
-            if query == channels['name']:
-                web.get('https://slack.com/api/channels.join?token=' + api_key + '&name=' + query + '&pretty=1')
-
-
 def main(wf):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--join', nargs='?')
-    parser.add_argument('--leave', dest='leave', nargs='?')
+    parser.add_argument('--message', nargs='?')
     parser.add_argument('query', nargs='?', default=None)
     args = parser.parse_args(wf.args)
 
-    if args.leave:
-        leave_channel(keys=slack_keys(), query=args.leave)
-    elif args.join:
-        join_channel(keys=slack_keys(), query=args.join)
+    if args.message:
+        query = args.message
+        split_message = query.split()
+        channel_name = split_message[0]
+        if len(split_message) == 3:
+            message = split_message[2]
+        else:
+            message = '%20'.join(split_message[2:])
+        for key in slack_keys():
+                api_key = str(key)
+                slack_auth = web.get('https://slack.com/api/auth.test?token=' + api_key + '&pretty=1').json()
+                if slack_auth['ok'] is True:
+                    message_url = 'https://slack.com/api/chat.postMessage?token=' + api_key + '&channel=%23' + channel_name + '&text=' + message + '&as_user=true&pretty=1'
+                    web.get(message_url)
+
 
     def wrapper():
         return slack_channels(keys=slack_keys())
@@ -96,17 +82,18 @@ def main(wf):
     if query:
         channels_list = wf.filter(query, channels_list, key=search_slack_channels)
 
-    for channels in channels_list:
-        if channels['member'] == True:
-            wf.add_item(title=channels['name']+' - '+channels['team'],
-                subtitle='Member',
-                arg=channels['name'],
-                valid=True)
-        elif channels['member'] == False:
-            wf.add_item(title=channels['name']+' - '+channels['team'],
-                subtitle='Not a member',
-                arg=channels['name'],
-                valid=True)
+    if len(channels_list) == 0:
+        wf.add_item(title="Enter your message",
+                    arg=query,
+                    valid=True)
+    else:
+        for channels in channels_list:
+            if channels['member'] == True:
+                wf.add_item(title=channels['name']+' - '+channels['team'],
+                    subtitle='Member',
+                    autocomplete=channels['name'] + ' > ',
+                    arg=query,
+                    valid=True)
 
     wf.send_feedback()
 

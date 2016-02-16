@@ -34,11 +34,11 @@ def slack_files(keys):
             files = web.get('https://slack.com/api/files.list?token=' + api_key + '&count=20&pretty=1').json()
             for file in files['files']:
                 if 'initial_comment' in file:
-                    files_list.append({'name': file['name'], 'id': file['id'], 'url': file['url'], 'title':
+                    files_list.append({'name': file['name'], 'id': file['id'], 'url': file['permalink'], 'title':
                         file['title'], 'filetype': file['filetype'], 'initial_comment': file['initial_comment'],
                                        'comment': file['initial_comment']['comment']})
                 else:
-                    files_list.append({'name': file['name'], 'id': file['id'], 'url': file['url'], 'title':
+                    files_list.append({'name': file['name'], 'id': file['id'], 'url': file['permalink'], 'title':
                         file['title'], 'filetype': file['filetype']})
 
     return files_list
